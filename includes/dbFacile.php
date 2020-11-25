@@ -125,6 +125,26 @@ function dbInsert($data, $table)
         return null;
     }
 }//end dbInsert()
+function dbInsertOids($data, $table)
+{
+    $time_start = microtime(true);
+
+    $sql = 'INSERT INTO `' . $table . '` (`' . implode('`,`', array_keys($data)) . '`) SELECT ' . implode(',', dbPlaceHolders($data)) .
+    " FROM dual WHERE NOT EXISTS (SELECT * FROM oids WHERE oid = '". $data['oid'] . "' AND ip = '" . $data['ip']. "')";
+
+    try {
+        $result = Eloquent::DB()->insert($sql, (array) $data);
+    } catch (PDOException $pdoe) {
+        dbHandleException(new QueryException($sql, $data, $pdoe));
+    }
+
+    recordDbStatistic('insert', $time_start);
+    if ($result) {
+        return Eloquent::DB()->getPdo()->lastInsertId();
+    } else {
+        return null;
+    }
+}//end dbInsert()*/
 
 /**
  * Passed an array and a table name, it attempts to insert the data into the table.

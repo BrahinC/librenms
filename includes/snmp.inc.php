@@ -224,6 +224,96 @@ function snmp_get_multi_oid($device, $oids, $options = '-OUQn', $mib = null, $mi
     foreach (array_chunk($oids, $oid_limit) as $chunk) {
         $cmd = gen_snmpget_cmd($device, $chunk, $options, $mib, $mibdir);
         $result = trim(external_exec($cmd));
+        echo("-------------------prueba------------ .\n");
+        echo("");
+        $p=implode(" , ",$device);
+        print_r($oids);
+        echo($device["os"]);
+        $dataYaml=@yaml_parse_file("/opt/librenms/includes/definitions/discovery/".$device["os"].".yaml",0);
+       
+        echo("-------------------prueba yaml------------ .\n");
+        echo("");
+        $p=implode(" , ",$device);
+        //var_dump($dataYaml);
+        #echo($p );
+        $installed_plugins = dbFetchColumn('SELECT `ip` FROM `oids`');
+        $oids_selcet = dbFetchColumn('SELECT `oid` FROM `oids`');
+        $oids_string = implode(" , ",$oids_selcet);
+        $ips=implode(" , ",$installed_plugins);
+    
+    
+        //$inser=false;
+        //$contF=$contF+1
+        $pruebad=array_merge($dataYaml) ;
+        foreach ($oids as $oid) {
+
+            
+
+                echo("---------------------------dataY-----------------------\n");
+                //print_r($dataYaml);
+                $pjs=json_encode($dataYaml);
+
+                //print_r( $pruebad);
+                
+                
+                 $ps2=str_replace('{{ $index }}', "",$pjs);
+
+                //echo($ps2);
+                echo("---------------------------dataY-----------------------\n");
+
+                
+                    //$dataY2= str_replace($dataY["num_oid"],"");
+              /*  if( !strpos($cmd[$j], $dataY2 ) ){
+                    $valueString=$dataY["value"];
+                }*/
+
+                    /*echo("-------------prueba valuse string-------\n")
+                    echo( $valueString."")
+                    echo("-----------------------------------------\n")*/
+               
+                       
+                        $replace=substr($oid,1,strlen($oid) );
+                        $index=strrpos($replace,".");
+                        $oid_sinindex=substr($replace,0,$index);
+                        $oid_sinindex=".".$oid_sinindex;
+                        echo("la oid sin el index es :$oid_sinindex\n");
+                    
+                        $index2=strrpos($ps2,$oid_sinindex);
+                        $subvalue=substr($ps2,$index2-40,$index2);
+
+                        $index3 = strrpos( $subvalue,$oid_sinindex);
+                        $replaced2 = substr( $subvalue,0,$index3);
+
+                        $oidstrign=str_replace('"', "",$replaced2);
+                        $oidstrign=str_replace(',num_oid:', "", $oidstrign);
+                        $oidstrign=str_replace('value:', "", $oidstrign);
+
+                        $oidstrign=str_replace('ta:[{oid:', "", $oidstrign);
+                        $oidstrign=str_replace('000},{oid:', "", $oidstrign);
+                        $oidstrign=str_replace(',', "", $oidstrign);
+                        $oidstrign=str_replace('ue:', "", $oidstrign);
+                       
+                        echo("el value es :  $oidstrign\n");
+
+                       
+                    dbInsertOids([
+                        'oid' => $oid,
+                        'ip'=> $device["hostname"],
+                        "oidstring"=> $oidstrign
+                    ], 'oids');
+
+             
+
+            
+
+   
+       
+    
+        }
+        
+     
+     
+        echo("-------------------prueba------------.\n");
         if ($result) {
             $data = array_merge($data, explode("\n", $result));
         }
